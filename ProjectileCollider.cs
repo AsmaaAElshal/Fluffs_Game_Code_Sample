@@ -1,24 +1,28 @@
 using UnityEngine;
 using System.Collections;
 using System;
+/*
+This scrip is applied on the projectile object which flicked by the Fluff .
 
+
+*/
 public class ProjectileCollider : MonoBehaviour
 {
-	
+
     /*
-     * This script is responsible for detecting the 
-	 * user's touch on the Projectilecollider 
+     * This script is responsible for detecting the
+	   * user's touch on the Projectilecollider
     */
-		
-	
+
     //Public
-    public GameObject Projectile;
+    public GameObject projectile;
     public GameObject Mouth;
-    public  int NumberOfProjectiles = 5;
+    public  int numberOfProjectiles = 5;
     public static int staticNumberOfProjectiles;
-    public TextMesh ProjectileCounterText;
-    public float FlickingDistance = 0;
-    public int ProjectileSpeed = 0;
+    public TextMesh projectileCounterText;
+    public float flickingDistance = 0;
+    public int projectileSpeed = 0;
+		public GameObject fluffWrapper;
 
 
     //Private
@@ -27,44 +31,36 @@ public class ProjectileCollider : MonoBehaviour
     Ray ray;
     RaycastHit hit;
     int projectileFullnumbers;
-
     bool fluffclicked = false;
-	
     Vector3 initpos;
     Vector3 currtpos;
-		
-    private TouchInfo[] touchInfoArray;
-    public GameObject FluffWrapper;
-
-    #region SoundVariables
+    TouchInfo[] touchInfoArray;
 
     GameObject SoundManagereObj;
     SoundManagerClass SoundManScript;
 
-    #endregion
-
     void Start()
     {
 
-        //Sound MAnager 
+        //Getting Sound Manager
         SoundManagereObj = GameObject.FindGameObjectWithTag("SoundManager");
         SoundManScript = (SoundManagerClass)SoundManagereObj.GetComponent("SoundManagerClass");
 
         // adding the rest of projectiles from previous level .
-        NumberOfProjectiles += PlayerPrefs.GetInt((Application.loadedLevel -1).ToString());
-		
-        projectileFullnumbers = NumberOfProjectiles;
-		
-        ProjectileCounterText.text = NumberOfProjectiles.ToString() + "/" + projectileFullnumbers.ToString();
-        staticNumberOfProjectiles = NumberOfProjectiles;
-		
+        numberOfProjectiles += PlayerPrefs.GetInt((Application.loadedLevel -1).ToString());
+
+        projectileFullnumbers = numberOfProjectiles;
+
+        projectileCounterText.text = numberOfProjectiles.ToString() + "/" + projectileFullnumbers.ToString();
+        staticNumberOfProjectiles = numberOfProjectiles;
+
         touchInfoArray = new TouchInfo[5];
     }
-	
+
     // Update is called once per frame
     void Update()
     {
-				
+
         ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         foreach (Touch t in	Input.touches)
         {
@@ -83,8 +79,8 @@ public class ProjectileCollider : MonoBehaviour
                         {
                             touchInfoArray[t.fingerId].touchPosition = t.position;
                             touchInfoArray[t.fingerId].timeSwipeStarted = Time.time;
-                            fluffclicked = true;	
-                            initpos = Mouth.transform.position;	
+                            fluffclicked = true;
+                            initpos = Mouth.transform.position;
                             currtpos = initpos;
                         }
                     }
@@ -99,23 +95,22 @@ public class ProjectileCollider : MonoBehaviour
                         if (t.position.x < (touchInfoArray[t.fingerId].touchPosition.x))
                         {
                             //Rotate Fluff to the other direction. (left)
-                            iTween.RotateTo(FluffWrapper, new Vector3(0, 180, FluffWrapper.transform.position.z), 0);		 
+                            iTween.RotateTo(fluffWrapper, new Vector3(0, 180, fluffWrapper.transform.position.z), 0);
                         }
                         else
                         {
                             // Just keep it as it , or if its already rotated 180 , so it should be rotated to be in default rotation 0,0,0
-                            iTween.RotateTo(FluffWrapper, new Vector3(0, 0, FluffWrapper.transform.position.z), 0);
-							 
+                            iTween.RotateTo(fluffWrapper, new Vector3(0, 0, fluffWrapper.transform.position.z), 0);
+
                         }
                         currtpos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
                         initpos.z = 0;
                         currtpos.z = 0;
-						
+
                         // Check if the current distance is greater than the flicking distance or not
-                        if ((currtpos - initpos).magnitude >= FlickingDistance)
+                        if ((currtpos - initpos).magnitude >= flickingDistance)
                         {
                             FireProjectile();
-
                         }
                     }
                 }
@@ -127,17 +122,16 @@ public class ProjectileCollider : MonoBehaviour
         }
     }
 
-	
     void OnMouseDown()
     {
         if (!PauseMenu.pausebool)
         {
             if (Physics.Raycast(ray.origin, ray.direction, out hit))
-            {	
+            {
                 if (hit.collider.gameObject.name == "ProjectileCollider")
                 {
-                    fluffclicked = true;	
-                    initpos = Mouth.transform.position;	
+                    fluffclicked = true;
+                    initpos = Mouth.transform.position;
                     currtpos = initpos;
                 }
             }
@@ -153,48 +147,43 @@ public class ProjectileCollider : MonoBehaviour
                 currtpos = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0));
                 initpos.z = 0;
                 currtpos.z = 0;
-						
-                if ((currtpos - initpos).magnitude >= FlickingDistance)
+
+                if ((currtpos - initpos).magnitude >= flickingDistance)
                 {
                     FireProjectile();
                 }
-					
             }
         }
     }
 
     void FireProjectile()
     {
-        
+
         PackedSprite FluffSprite = (PackedSprite)(gameObject.transform.parent.GetComponent("PackedSprite"));
         FluffSprite.PlayAnim(8);
 
         // Create projectile and Update UI
-        if (--NumberOfProjectiles >= 0)
+        if (--numberOfProjectiles >= 0)
         {
             //Update the UI , update the current avialable number of projectiles on HUD
-            ProjectileCounterText.text = NumberOfProjectiles.ToString() + "/" + projectileFullnumbers.ToString();
-            staticNumberOfProjectiles = NumberOfProjectiles;
+            projectileCounterText.text = numberOfProjectiles.ToString() + "/" + projectileFullnumbers.ToString();
+            staticNumberOfProjectiles = numberOfProjectiles;
 
-            NewProjectile = (GameObject)Instantiate(Projectile, initpos, Quaternion.identity);
+            NewProjectile = (GameObject)Instantiate(projectile, initpos, Quaternion.identity);
 
             //GameObject.FindGameObjectWithTag("FluffProjCollider").active = false;
             Vector3 dir = currtpos - initpos;
             dir.Normalize();
-            NewProjectile.rigidbody.velocity = dir * ProjectileSpeed;
+            NewProjectile.rigidbody.velocity = dir * projectileSpeed;
         }
         GameObject.FindGameObjectWithTag("FluffProjCollider").active = false;
-
-        fluffclicked = false;   
-
-        #region ProjectileSound     
-        SoundManScript.Scene_Source.clip = SoundManScript.ProjctileClipe;
-        SoundManScript.Scene_Source.Play();             
-        #endregion
+        fluffclicked = false;
+				//Play projctileClip
+        SoundManScript.Scene_Source.clip = SoundManScript.projctileClip;
+        SoundManScript.Scene_Source.Play();
     }
 
     void OnMouseUp()
     {
     }
 }
-
